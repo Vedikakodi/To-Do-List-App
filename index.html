@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>To Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #container {
+            width: 400px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 80%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .note {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        .note:hover {
+            background-color: #f0f0f0;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .subtasks {
+            margin-left: 20px;
+        }
+        .subtask-button {
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            padding: 2px 5px;
+            margin: 2px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .subtask-button:hover {
+            background-color: #d39e00;
+        }
+        
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>To Do List</h1>
+        <input type="text" id="taskInput" placeholder="Add a task title">
+        <button onclick="addTask()">Add</button>
+        <div id="tasks"></div>
+    </div>
+
+    <script>
+        // Load saved tasks from local storage
+        const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+        // Function to generate a random light color
+        function getRandomLightColor() {
+            const letters = 'ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 6)];
+            }
+            return color;
+        }
+
+        // Function to render tasks with random light background colors
+        function renderTasks() {
+            const tasksDiv = document.getElementById('tasks');
+            tasksDiv.innerHTML = '';
+
+            savedTasks.forEach((task, index) => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = 'note animate-fade-in';
+                if (task.completed) {
+                    taskDiv.classList.add('completed');
+                }
+                const taskColor = getRandomLightColor();
+                taskDiv.style.backgroundColor = taskColor; // Assign a random light background color to the main task
+                taskDiv.innerHTML = `<span class="sl-no"><b>${index + 1}.</span> ${task.text}</b>`;
+                taskDiv.innerHTML += `
+                    <button onclick="editTask(${index})">Edit</button>
+                    <button onclick="toggleTaskStatus(${index})">${task.completed ? 'Uncompleted' : 'Completed'}</button>
+                    <button onclick="deleteTask(${index})">Delete</button>
+                    <button onclick="addSubtask(${index}, '${taskColor}')">Add Task</button>
+                `;
+                if (task.subtasks) {
+                    taskDiv.innerHTML += '<div class="subtasks">';
+                    task.subtasks.forEach((subtask, subIndex) => {
+                        const subtaskDiv = document.createElement('div');
+                        subtaskDiv.className = 'note animate-fade-in';
+                        if (subtask.completed) {
+                            subtaskDiv.classList.add('completed');
+                        }
+                        subtaskDiv.style.backgroundColor = taskColor; // Assign the same background color to the subtask
+                        subtaskDiv.innerHTML = '• ' + subtask.text; // Use bullet point (•) for subtasks
+                        subtaskDiv.innerHTML += `
+                            <button class="subtask-button" onclick="editSubtask(${index}, ${subIndex})">Edit</button>
+                            <button class="subtask-button" onclick="toggleSubtaskStatus(${index}, ${subIndex})">${subtask.completed ? 'Uncompleted' : 'Completed'}</button>
+                            <button class="subtask-button" onclick="deleteSubtask(${index}, ${subIndex})">Delete</button>
+                        `;
+                        taskDiv.querySelector('.subtasks').appendChild(subtaskDiv);
+                    });
+                    taskDiv.innerHTML += '</div>';
+                }
+                tasksDiv.appendChild(taskDiv);
+            });
+        }
+
+        // Function to add a new task
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const text = taskInput.value.trim();
+            if (text === '') return;
+
+            savedTasks.push({ text, completed: false, subtasks: [] });
+            localStorage.setItem('tasks', JSON.stringify(savedTasks));
+            taskInput.value = '';
+            renderTasks();
+        }
+
+        // Function to add a new subtask to a task
+        function addSubtask(index, taskColor) {
+            const newText = prompt('Add a subtask:');
+            if (newText !== null) {
+                savedTasks[index].subtasks.push({ text: newText, completed: false });
+                localStorage.setItem('tasks', JSON.stringify(savedTasks));
+                renderTasks();
+            }
+        }
+
+        // Function to edit a task
+        function editTask(index) {
+            const newText = prompt('Edit the task:', savedTasks[index].text);
+            if (newText !== null) {
+                savedTasks[index].text = newText;
+                localStorage.setItem('tasks', JSON.stringify(savedTasks));
+                renderTasks();
+            }
+        }
+
+        // Function to edit a subtask
+        function editSubtask(taskIndex, subIndex) {
+            const newText = prompt('Edit the subtask:', savedTasks[taskIndex].subtasks[subIndex].text);
+            if (newText !== null) {
+                savedTasks[taskIndex].subtasks[subIndex].text = newText;
+                localStorage.setItem('tasks', JSON.stringify(savedTasks));
+                renderTasks();
+            }
+        }
+
+        // Function to toggle the status of a task
+        function toggleTaskStatus(index) {
+            savedTasks[index].completed = !savedTasks[index].completed;
+            localStorage.setItem('tasks', JSON.stringify(savedTasks));
+            renderTasks();
+        }
+
+        // Function to toggle the status of a subtask
+        function toggleSubtaskStatus(taskIndex, subIndex) {
+            savedTasks[taskIndex].subtasks[subIndex].completed = !savedTasks[taskIndex].subtasks[subIndex].completed;
+            localStorage.setItem('tasks', JSON.stringify(savedTasks));
+            renderTasks();
+        }
+
+        // Function to delete a task
+        function deleteTask(index) {
+            savedTasks.splice(index, 1);
+            localStorage.setItem('tasks', JSON.stringify(savedTasks));
+            renderTasks();
+        }
+
+        // Function to delete a subtask
+        function deleteSubtask(taskIndex, subIndex) {
+            savedTasks[taskIndex].subtasks.splice(subIndex, 1);
+            localStorage.setItem('tasks', JSON.stringify(savedTasks));
+            renderTasks();
+        }
+
+        // Initial rendering
+        renderTasks();
+    </script>
+</body>
+</html>
